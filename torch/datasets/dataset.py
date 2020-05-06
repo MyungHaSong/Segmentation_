@@ -9,20 +9,24 @@ from torchvision import transforms
 from utils import *
 
 class CamVid(torch.utils.data.Dataset):
-    def __init__(self,path,scale,mode = 'training'):
+    def __init__(self,path,mode = 'train'):
         self.path = path
-        self.image_path = sorted(glob.glob(path + 'img/' + '*.png'))
-        self.label_path = sorted(glob.glob(path + 'label/' + '*.png'))
-        self.to_tensor = transform.Compose([
+        self.mode = mode
+        self.image_path = sorted(glob.glob(path +'/'+ self.mode +'/*.png'))
+        self.label_path = sorted(glob.glob(path +'/'+ self.mode + '_labels/' + '*.png'))
+        self.to_tensor = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
-        self.csv = get_label_info('./CamVid/CamVid/class_dict.csv')
+        self.csv = get_label_info('./datasets/CamVid/class_dict.csv')
 
 
     def __getitem__(self,index):
         random_seed = random.random()
-        img = Image.open(self.image_path[index])
+        img = np.array(Image.open(self.image_path[index]))
         label = np.array(Image.open(self.label_path[index]))
-        label = one_hot_it_v11(label,self.csv)
+        label = one_hot_it_v11_dice(label,self.csv)
+        img = self.to_tensor(img).float()
         return img, label
+    def __len__(self):
+        return len(self.image_path)
