@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+import pandas as pd
 def get_label_info(csv_path):
     	# return label -> {label_name: [r_value, g_value, b_value, ...}
 	ann = pd.read_csv(csv_path)
@@ -33,7 +33,6 @@ def one_hot_it_v11(label, label_info):
 	# from 0 to 11, and 11 means void
 	class_index = 0
 	for index, info in enumerate(label_info):
-		print(info)
 		color = label_info[info][:3]
 		class_11 = label_info[info][3]
 		if class_11 == 1:
@@ -48,3 +47,27 @@ def one_hot_it_v11(label, label_info):
 			class_map = np.all(equality, axis=-1)
 			semantic_map[class_map] = 11
 	return semantic_map
+def one_hot_it_v11_dice(label, label_info):
+	# return semantic_map -> [H, W, class_num]
+	semantic_map = []
+	void = np.zeros(label.shape[:2])
+	for index, info in enumerate(label_info):
+		color = label_info[info][:3]
+		class_11 = label_info[info][3]
+		if class_11 == 1:
+			# colour_map = np.full((label.shape[0], label.shape[1], label.shape[2]), colour, dtype=int)
+			equality = np.equal(label, color)
+			class_map = np.all(equality, axis=-1)
+			# semantic_map[class_map] = index
+			semantic_map.append(class_map)
+		else:
+			equality = np.equal(label, color)
+			class_map = np.all(equality, axis=-1)
+			void[class_map] = 1
+	semantic_map.append(void)
+	semantic_map = np.stack(semantic_map, axis=-1).astype(np.float)
+	return semantic_map
+def poly_lr_scheduler(optimizer, init_lr, epoch, lr_decay_iter=1, max_iter,power =0.9):
+	lr = init_lr * (1-iter/max_iter)**power
+	optimizer.param_groups[0]['lr'] = lr
+	return lr

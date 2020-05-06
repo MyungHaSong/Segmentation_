@@ -1,17 +1,17 @@
-from backbone.resnet_bise import *
+from backbone.resnet_bise import build_context
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 class Convblock(nn.Module):
     def __init__(self, in_c, out, kernel_size=3,stride=2):
-        super(Convblock,Convblock).__init__()
-        block = nn.Sequential(
+        super(Convblock,self).__init__()
+        self.block = nn.Sequential(
             nn.Conv2d(in_c,out,kernel_size=kernel_size,stride=stride,padding = 1, bias=False),
             nn.BatchNorm2d(out),
             nn.ReLU(inplace=True)
         )
     def forward(self,x):
-        return block(x)
+        return self.block(x)
 
 class SpatialPath(nn.Module):
     def __init__(self):
@@ -64,6 +64,7 @@ class FeatureFusionModule(nn.Module):
 
 class BiseNet(nn.Module):
     def __init__(self,num_classes,context_model):
+        super(BiseNet, self).__init__()
         self.context = build_context(context_model)
         self.spatial = SpatialPath()
         if context_model =='resnet18':
