@@ -81,6 +81,7 @@ for epoch in range(args.n_epochs):
         tq.update(args.batch_size)
         tq.set_postfix(loss='%.6f'%loss)
         optimizer.zero_grad()
+        loss.backward()
         optimizer.step()
         loss_.append(loss)
         if epoch == 0 and i == 0 :
