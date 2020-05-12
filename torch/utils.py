@@ -47,6 +47,11 @@ def one_hot_it_v11(label, label_info):
 			class_map = np.all(equality, axis=-1)
 			semantic_map[class_map] = 11
 	return semantic_map
+
+def reverse_one_hot(img):
+	img = img.permute(1,2,0)
+	x = torch.argmax(img, dim = 1)
+	return x 
 def one_hot_it_v11_dice(label, label_info):
 	# return semantic_map -> [H, W, class_num]
 	semantic_map = []
@@ -67,7 +72,27 @@ def one_hot_it_v11_dice(label, label_info):
 	semantic_map.append(void)
 	semantic_map = np.stack(semantic_map, axis=-1).astype(np.float)
 	return semantic_map
-def poly_lr_scheduler(optimizer, init_lr, epoch, lr_decay_iter=1, max_iter,power =0.9):
-	lr = init_lr * (1-iter/max_iter)**power
+def poly_lr_scheduler(optimizer, init_lr, epoch, lr_decay_iter=1, max_iter=300,power =0.9):
+	lr = init_lr * (1-epoch/max_iter)**power
 	optimizer.param_groups[0]['lr'] = lr
 	return lr
+def cal_accuarcy(pred, label):
+	pred = pred.flatten()
+	label = label.flatten()
+	count = 0.0 
+	for i in range(len(label)):
+		if pred[i] == label[i]:
+			count +=1.0
+	return float(count) / float(len(label))
+
+def per_class_iu(hist):
+	ep = 1e-5
+	return (np.diag(hist) + ep) / (hist.sum(1) + hist.sum(0) - np.diag(hist) + ep)
+def fast_hist(a, b, n):
+	'''
+	a and b are predict and mask respectively
+	n is the number of classes
+	'''
+	k = (a >= 0) & (a < n)
+	return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+	

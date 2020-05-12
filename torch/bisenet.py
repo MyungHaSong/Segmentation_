@@ -23,14 +23,13 @@ class SpatialPath(nn.Module):
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
-        return x 
+        return x
 class AttRefineModule(nn.Module):
     def __init__(self,in_c,out):
         super(AttRefineModule,self).__init__()
-        self.conv = nn.Conv2d(in_c,out,kernel_size=1,stride=1,padding= 1, bias=False)
+        self.conv = nn.Conv2d(in_c,out,kernel_size=1,stride=1, bias=False)
         self.bn = nn.BatchNorm2d(out)
         self.sigmoid = nn.Sigmoid()
-        self.in_channels = in_c
         self.avg_pool = nn.AdaptiveAvgPool2d(output_size=(1,1))
     def forward(self,x):
         out = self.avg_pool(x)
@@ -38,15 +37,11 @@ class AttRefineModule(nn.Module):
         out = self.bn(x)
         out = self.sigmoid(x)
         x = torch.mul(x,out)
-        return x 
+        return x
 class FeatureFusionModule(nn.Module):
     def __init__(self,num_classes,in_c):
         super(FeatureFusionModule,self).__init__()
-        self.block = nn.Sequential(
-            nn.Conv2d(in_c,num_classes,kernel_size=3,stride=1),
-            nn.BatchNorm2d(num_classes),
-            nn.ReLU(inplace=True)
-        )
+        self.block = Convblock(in_c,num_classes,stride=1)
         self.avg_pool = nn.AdaptiveAvgPool2d(output_size=(1,1))
         self.conv1 = nn.Conv2d(num_classes,num_classes,kernel_size=1,stride=1)
         self.relu = nn.ReLU(inplace=True)
@@ -61,7 +56,6 @@ class FeatureFusionModule(nn.Module):
         out = torch.mul(feature,out)
         out = torch.add(out,feature)
         return out
-
 class BiseNet(nn.Module):
     def __init__(self,num_classes,context_model):
         super(BiseNet, self).__init__()
@@ -69,7 +63,7 @@ class BiseNet(nn.Module):
         self.spatial = SpatialPath()
         if context_model =='resnet18':
             self.att_refine_module1 = AttRefineModule(256,256)
-            self.att_refine_module2 = AttRefineModule(256,512)
+            self.att_refine_module2 = AttRefineModule(512,512)
             self.super_conv1 = nn.Conv2d(256,num_classes,kernel_size=1)
             self.super_conv2 = nn.Conv2d(512,num_classes,kernel_size=1)
             self.feature_fusion = FeatureFusionModule(num_classes,1024)
@@ -98,14 +92,12 @@ class BiseNet(nn.Module):
             x_3_sup = torch.nn.functional.interpolate(x_3_sup, size = x.size()[-2:], mode = 'bilinear')
             x_4_sup = torch.nn.functional.interpolate(x_4_sup, size = x.size()[-2:], mode = 'bilinear')
 
+
         result = self.feature_fusion(s_feature,feature)
         result = torch.nn.functional.interpolate(result, scale_factor=8,mode='bilinear')
         result = self.conv(result)
 
+
         if self.training ==True:
             return result, x_3_sup, x_4_sup
         return result
-
-
-
-

@@ -1,5 +1,6 @@
+
 import glob
-import os 
+import os
 import torch
 import cv2
 import numpy as np
@@ -25,7 +26,8 @@ class CamVid(torch.utils.data.Dataset):
         random_seed = random.random()
         img = np.array(Image.open(self.image_path[index]))
         label = np.array(Image.open(self.label_path[index]))
-        label = one_hot_it_v11_dice(label,self.csv)
+        label = one_hot_it_v11_dice(label,self.csv).astype(np.uint8)
+        label = np.transpose(label, [2,0,1]).astype(np.float32)
         img = self.to_tensor(img).float()
         return img, label
     def __len__(self):
